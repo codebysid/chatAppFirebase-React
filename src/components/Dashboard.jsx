@@ -1,20 +1,30 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useId, useState } from 'react'
 import { doc, onSnapshot,collection, getDoc, getDocs } from "firebase/firestore";
 import { db } from '../Firebase';
 import { Button, getLinearProgressUtilityClass } from '@mui/material';
 import { useAuthContext } from '../contexts/AuthContext';
+import Chat from './Chat';
+
 
 const Dashboard = () => {
     const [dataFromStore,setDataFromStore]=useState([])
+    const [userIds,setUserIds]=useState([])
+    const [chat,setChat]=useState(false)
+    const [selectedUserId,setSelectedUserId]=useState('')
     const userCollectionRef=collection(db,"User")
     const {logOut,currentUser}=useAuthContext()
+    const currentUserId=currentUser.uid
 
     const getData=async()=>{
-        const currentUserName=currentUser.email
-        const data=await getDocs(userCollectionRef)
-        data && data.docs.map(ele=>{
-            // console.log(ele.data())
-            if(currentUserName!==ele.data().Username)setDataFromStore(prev=>[...prev,ele.data()])
+        onSnapshot(userCollectionRef,(data)=>{
+            data && data.docs.map(ele=>{
+                const currentUserName=currentUser.email
+                if(currentUserName!==ele.data().Username){
+                    setDataFromStore(prev=>[...prev,ele.data()])
+                    setUserIds(prev=>[...prev,ele.id])
+                }
+
+            })
         })
 
     }
@@ -26,8 +36,14 @@ const Dashboard = () => {
             console.log(err)
         }
     }
+
+    const invokeChat=(key)=>{
+        setSelectedUserId(userIds[key])
+        setChat(true)
+    }
     useEffect(()=>{
         setDataFromStore([])
+        setUserIds([])
         getData()
     },[])
 
@@ -37,7 +53,11 @@ const Dashboard = () => {
       {
         dataFromStore?dataFromStore.map((ele,key)=>{
             return(
-                <span className='userNameElement' key={key}>{ele.Username}</span>
+                <span 
+                onClick={()=>invokeChat(key)}
+                className='userNameElement' key={key}>
+                    {ele.Username}
+                </span>
             )
         }):null
       }
@@ -48,6 +68,12 @@ const Dashboard = () => {
       type='button'
       onClick={handleLogout}
       >Log Out</Button>
+
+      {
+        chat && <Chat selectedUserId={selectedUserId}
+        />
+      }
+
       </div>
   )
 }

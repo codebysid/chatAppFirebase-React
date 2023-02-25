@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import {auth} from '../Firebase'
 import { createUserWithEmailAndPassword , signInWithEmailAndPassword} from 'firebase/auth'
 import { db } from '../Firebase'
-import { doc, setDoc } from "firebase/firestore"; 
+import { collection, doc, setDoc } from "firebase/firestore"; 
 
 const AuthContext=createContext()
 
@@ -16,10 +16,10 @@ export function AuthProvider({children}) {
   function signUp(email,password){
     return createUserWithEmailAndPassword(auth,email,password).then(async(cred)=>{
       await setDoc(doc(db, "User", cred.user.uid), {
-        Username: email
+        Username: email,
+        data:{}
       });
     })
-    
   }
 
   function login(email,password){
