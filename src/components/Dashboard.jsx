@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { doc, onSnapshot,collection, getDoc, getDocs } from "firebase/firestore";
 import { db } from '../Firebase';
 import { Button, getLinearProgressUtilityClass } from '@mui/material';
@@ -10,23 +10,22 @@ const Dashboard = () => {
     const [dataFromStore,setDataFromStore]=useState([])
     const [userIds,setUserIds]=useState([])
     const [chat,setChat]=useState(false)
-    const [selectedUserId,setSelectedUserId]=useState('')
+    const [selectedUserId,setSelectedUserId]=useState([])
+    const [showChat,setShowChat]=useState([])
+
     const userCollectionRef=collection(db,"User")
     const {logOut,currentUser}=useAuthContext()
-    const currentUserId=currentUser.uid
 
     const getData=async()=>{
         onSnapshot(userCollectionRef,(data)=>{
             data && data.docs.map(ele=>{
-                const currentUserName=currentUser.email
-                if(currentUserName!==ele.data().Username){
-                    setDataFromStore(prev=>[...prev,ele.data()])
+                if(currentUser.email!==ele.data().Username){
+                    setDataFromStore(prev=>prev?new Set([...prev,ele.data()]):new Set([ele.data()]))
                     setUserIds(prev=>[...prev,ele.id])
                 }
-
             })
+            
         })
-
     }
 
     const handleLogout=async()=>{
@@ -36,22 +35,28 @@ const Dashboard = () => {
             console.log(err)
         }
     }
-
+    
     const invokeChat=(key)=>{
         setSelectedUserId(userIds[key])
         setChat(true)
     }
+
     useEffect(()=>{
         setDataFromStore([])
         setUserIds([])
         getData()
     },[])
+    
+    useEffect(()=>{
+        setShowChat([])
+    },[selectedUserId])
 
   return (
     <div className='userNameDivParent'>
     <div className='userNameDiv'>
       {
-        dataFromStore?dataFromStore.map((ele,key)=>{
+        
+        dataFromStore?Array.from(dataFromStore).map((ele,key)=>{
             return(
                 <span 
                 onClick={()=>invokeChat(key)}
@@ -62,17 +67,19 @@ const Dashboard = () => {
         }):null
       }
 
-    </div>
       <Button
       variant='contained'
       type='button'
       onClick={handleLogout}
       >Log Out</Button>
 
-      {
-        chat && <Chat selectedUserId={selectedUserId}
-        />
-      }
+      </div>
+        {
+            chat && <Chat selectedUserId={selectedUserId}
+            showChat={showChat}
+            setShowChat={setShowChat}
+            />
+        }
 
       </div>
   )

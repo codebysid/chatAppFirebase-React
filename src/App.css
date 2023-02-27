@@ -50,10 +50,14 @@
 }
 
 .userNameDiv{
-  overflow: scroll;
-  height: 70vh;
   display: flex;
   flex-flow: column wrap;
+  justify-content: center;
+  align-items: center;
+  overflow: auto;
+  height: 70vh;
+  width: fit-content;
+  padding: 1vw;
   border: 0.1vw solid #808080;
   border-radius: 2vw;
   }
@@ -69,3 +73,47 @@
     color: white;
     cursor: pointer;
   }
+.userNameDivParent{
+  display: flex;
+  align-items: flex-end;
+  gap:4vw
+}
+.displayMsg{
+  overflow: auto;
+  width: 55vw;
+  height: 35vw;
+}
+
+.right{
+  clear: both;
+  float: right;
+  text-align: right;
+}
+
+.left{
+  clear: both;
+  float: left;
+  text-align: left;
+}
+
+.displayMsg>p{
+  background-color: #2196f3;
+  color: white;
+  padding: .5vw 1vw;
+  border-radius: .6vw;
+  margin:1vw 1vw;
+  max-width : 50%
+}
+
+.ChatDiv{
+  border: 0.1vw solid #808080;
+  padding: 1vw 0;
+  border-radius: 1vw;
+}
+
+.ChatDiv>form{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1vw;
+}

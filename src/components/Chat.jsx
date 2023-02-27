@@ -1,79 +1,71 @@
 import { Button, TextField } from '@mui/material'
-import { collection, onSnapshot ,doc,setDoc, getDoc} from 'firebase/firestore'
-import React, { useEffect, useState } from 'react'
+import { collection, onSnapshot ,doc,setDoc, getDoc, updateDoc, arrayUnion} from 'firebase/firestore'
+import React, { createContext, useEffect, useState } from 'react'
 import { useAuthContext } from '../contexts/AuthContext'
 import { db } from '../Firebase'
+import { v4 as uuidv4 } from 'uuid';
 
-const Chat = ({selectedUserId}) => {
-    const [showChat,setShowChat]=useState(null)
+const Chat = ({selectedUserId,showChat,setShowChat}) => {
     const [msgToSend,setMsgToSend]=useState('')
     const {currentUser}=useAuthContext()
-    let tmp=[]
 
+    const combinedId=currentUser.uid>selectedUserId?currentUser.uid+selectedUserId:selectedUserId+currentUser.uid
 
-    const docRef=doc(db,"User",currentUser.uid)
+    const createChat=async()=>{
 
-    const getData=async()=>{
-        const docSnap=await getDoc(docRef)
+        try{
+            const res=await getDoc(doc(db,"chat",combinedId))
 
-        if(docSnap.exists()){
-            console.log(docSnap.data())
-            if(docSnap.data().data.selectedUserId){
-                setShowChat(docSnap.data().selectedUserId)
-            }
-            }
-        }
+            if(res.exists()){
 
-        const sendMessage=(e)=>{
-            e.preventDefault()
-            let body={
-                    "sentBy":currentUser.uid,
-                    "msg":msgToSend
-            }
-            tmp.push(body)
-            console.log(tmp)
-
-            // setShowChat(prev=>
-            //     prev?[
-            //         {
-            //         selectedUserId:[
-            //             {...prev.selectedUserId},{...body}
-            //         ]
-            //         }
-            //     ]:[{selectedUserId:[body]}]
-            // )
-            // [
-            //     {
-            //         selectedUserId:{
-            //             {},{},{}
-            //         }
-            //     }
-            // ]
-        }
-
-        const saveChanges=async()=>{
-            const docSnap=await getDoc(docRef)
-            if(docSnap.exists()){
-                setDoc(doc(db,"User",currentUser.uid),{
-                    data:showChat
+            }else{
+                await setDoc(doc(db,"chat",combinedId),{
+                    messages:[]
                 })
             }
-
+        }catch(err){
+            console.log({err})
         }
+    }
 
-  useEffect(()=>{
-    getData()
-  },[])
+    const sendMessage=async(e)=>{
+        e.preventDefault()
+        setMsgToSend("")
+        let tmp={
+            msg:msgToSend,
+            sentBy:currentUser.uid,
+            id:uuidv4()
+        }
+        try{
+            await updateDoc(doc(db,"chat",combinedId),{
+                messages:arrayUnion(tmp),
+            })
+            
+        }catch(err){
+            console.log(err)
+        }
+    }
+    
+    useEffect(()=>{
+        createChat()
+        const unSub=onSnapshot(doc(db,"chat",combinedId),doc=>{
+            setShowChat(doc.data().messages)
+        })
 
-useEffect(()=>{
-    console.dir(showChat)
-
-    // return saveChanges
-},[showChat])
-
+        return unSub
+    },[selectedUserId])
   return (
-    <div>
-        Chat
+    <div className='ChatDiv'>
+        <div className="displayMsg">
+            {
+            showChat && showChat.map((ele,key)=>{
+                return(
+                    <p key={key} className={ele.sentBy===currentUser.uid?"right":"left"}>{ele.msg}
+                    </p>
+                )
+            })
+        }
+        </div>
         <form onSubmit={sendMessage}>
             <TextField
                 type='text'
@@ -86,7 +78,9 @@ useEffect(()=>{
             <Button
             variant='contained'
             type='submit'
-            >Send</Button>
+            >
+                Send
+            </Button>
         </form>
     </div>
   )

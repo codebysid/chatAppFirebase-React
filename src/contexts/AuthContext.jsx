@@ -17,7 +17,6 @@ export function AuthProvider({children}) {
     return createUserWithEmailAndPassword(auth,email,password).then(async(cred)=>{
       await setDoc(doc(db, "User", cred.user.uid), {
         Username: email,
-        data:{}
       });
     })
   }
